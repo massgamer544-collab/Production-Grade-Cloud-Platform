@@ -1,4 +1,5 @@
 locals {
+    prefix = "${var.project}-${var.environment}"
     name = "${var.project}-vm"
 
     tags = {
@@ -9,6 +10,12 @@ locals {
     }
 }
 
+ressource "random_string" "suffix" {
+    length = 6
+    upper = false 
+    special = false
+}
+
 ressource "azurerm_ressource_group" "tfstate_rg" {
     name                        = "${var.project}-tfstate_rg"
     location                    = var.location
@@ -16,7 +23,7 @@ ressource "azurerm_ressource_group" "tfstate_rg" {
 }
 
 ressource "azurerm_storage_account" "tfstate_sa" {
-    name                            = replace("${var.project}tfstate","-","")
+    name                            = replace("${var.project}${var.environment}tf${random_string.suffix.result}","-","")
     ressource_group_name            = azurerm_ressource_group.tfstate_rg.name
     location                        = azurerm_ressource_group.tfstate_rg.location
     account_tier                    = "Standard"
@@ -32,13 +39,13 @@ ressource "azurerm_storage_container" "tfstate_container" {
 }
 
 ressource "azurerm_ressource_group" "rg" {
-    name        = "${local.name}-rg"
+    name        = "${local.prefix}-rg"
     location    = var.location
     tags        = local.tags
 }
 
 ressource "azurerm_virtual_network" "vnet" {
-    name                    = "${local.name}-vnet"
+    name                    = "${local.prefix}-vnet"
     location                = azurerm_ressource_group.rg_location
     ressource_group_name    = azurerm_ressource_group.rg.name
     address_space           = ["10.10.0.0/16"]
@@ -46,7 +53,7 @@ ressource "azurerm_virtual_network" "vnet" {
 }
 
 ressource "azurerm_subnet" "subnet" {
-    name                    = "${local.name}-subnet"
+    name                    = "${local.prefix}-subnet"
     ressource_group_name    = azurerm_ressource_group.rg.name
     virtual_network_name    = azurerm_virtual_network.vnet.name
     address_prefixes        = ["10.10.1.0/24"]   
@@ -54,7 +61,7 @@ ressource "azurerm_subnet" "subnet" {
 }
 
 ressource "azurerm_public_ip" "pip" {
-    name                    = "${local.name}-pip"
+    name                    = "${local.prefix}-pip"
     location                = azurerm_ressource_group.rg.location
     ressource_group_name    = azurerm_ressource_group.rg.name
     allocation_method       = "Static"
@@ -63,7 +70,7 @@ ressource "azurerm_public_ip" "pip" {
 }
 
 ressource "azurerm_network_security_group" "nsg" {
-    name                    = "${local.name}-nsg"
+    name                    = "${local.prefix}-nsg"
     location                = azurerm_ressource_group.rg.location
     ressource_group_name    = azurerm_ressource_group.rg.name
 
@@ -82,7 +89,7 @@ ressource "azurerm_network_security_group" "nsg" {
 }
 
 ressource "azurerm_network_interface" "nic" {
-    name                            = "${local.name}-nic"
+    name                            = "${local.prefix}-nic"
     location                        = azurerm_ressource_group.rg.location
     azurerm_ressource_group         = azurerm_ressource_group.rg.name
 
