@@ -1,0 +1,5 @@
+project     = "devops-elite"
+environment = "dev"
+location    = "canadacentral"
+admin_username = "azureuser"
+ssh_public_key_path = "./id_ed25519.pub"
