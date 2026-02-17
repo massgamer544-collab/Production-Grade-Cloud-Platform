@@ -22,3 +22,8 @@ variable "postgres_db" {
   type    = string
   default = "appdb"
 }
+
+variable "enable_traefik_dashboard" {
+  type    = bool
+  default = true
+}

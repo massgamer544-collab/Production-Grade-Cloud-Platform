@@ -1,3 +1,3 @@
-output "api_url" {
-  value = module.platform.api_url
+output "gateway_url" {
+  value = module.platform.gateway_url
 }

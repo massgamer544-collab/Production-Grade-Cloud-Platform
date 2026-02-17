@@ -85,3 +85,47 @@ resource "docker_container" "api" {
 
   depends_on = [docker_container.postgres]
 }
+resource "docker_image" "traefik" {
+  name = "traefik:v3.1"
+}
+
+resource "docker_container" "traefik" {
+  name  = "${var.name}-traefik"
+  image = docker_image.traefik.image_id
+
+  networks_advanced {
+    name = docker_network.net.name
+  }
+
+  # Ports exposés: HTTP (80) + dashboard (8080 optionnel)
+#  ports {
+#    internal = 80
+#    external = 80
+#  }
+
+labels = {
+    "traefik.enable" = "true"
+
+    # Router HTTP: host localhost, path prefix /
+    "traefik.http.routers.api.rule" = "Host(`localhost`) && PathPrefix(`/`)"
+    "traefik.http.routers.api.entrypoints" = "web"
+
+    # Service: port interne du container api
+    "traefik.http.services.api.loadbalancer.server.port" = "8000"
+  }
+
+  # Traefik config en CLI flags (simple et portable)
+  command = [
+    "--api.dashboard=true",
+    "--api.insecure=true",
+    "--providers.docker=true",
+    "--providers.docker.exposedbydefault=false",
+    "--entrypoints.web.address=:80"
+  ]
+
+  # Permet à Traefik de lire les labels Docker
+  volumes {
+    host_path      = "/var/run/docker.sock"
+    container_path = "/var/run/docker.sock"
+  }
+}
