@@ -2,6 +2,8 @@
 
 Production-style infrastructure deployed on Azure using Terraform, with environment separation (dev/test) and remote state support.
 
+![CI](../../actions/workflows/ci.yml/badge.svg)
+
 ## What this deploys
 - Resource Group
 - Virtual Network + Subnet
@@ -56,3 +58,9 @@ terraform init -migrate-state
 ## Notes 
 - Terraform state files and .tfvars are intentionally excluded from Git.
 - This project is designed to reflect production patterns ( indempotent deploy/destroy)
+
+## Local platform (Terraform + Docker)
+```bash
+cd infra/envs/local
+terraform init
+terraform apply
