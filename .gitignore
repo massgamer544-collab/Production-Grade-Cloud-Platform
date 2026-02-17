@@ -1,15 +1,19 @@
 # Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-crash.log
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/crash.log
+**/.terraform.lock.hcl
+**/backend*.tf
 
-# Variables sensibles / locales
-*.tfvars
-*.tfvars.json
+# Variables / config locales (souvent sensibles)
+**/*.tfvars
+**/*.tfvars.json
 
-# Logs
-*.log
+# SSH keys / secrets
+**/*.pem
+**/id_ed25519
+**/id_ed25519.pub
 
 # OS / IDE
 .DS_Store
