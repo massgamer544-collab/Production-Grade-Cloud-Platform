@@ -4,6 +4,13 @@ Production-style infrastructure deployed on Azure using Terraform, with environm
 
 ![CI](../../actions/workflows/ci.yml/badge.svg)
 
+## Design decisions
+
+- **Infrastructure as Code:** Everything is defined in Terraform (Docker provider) to mirror production deployment patterns.
+- **Gateway-first routing:** API is not exposed directly; traffic flows through a reverse proxy (Traefik) to reflect real platform boundaries.
+- **Environment-ready:** Repo structure supports adding cloud targets (e.g., Azure) while keeping a fully testable local environment.
+- **Quality gates:** CI enforces `terraform fmt`, `terraform validate`, `tflint`, `checkov` and `pytest` to keep infra + app changes safe.
+
 ## What this deploys
 - Resource Group
 - Virtual Network + Subnet
@@ -17,6 +24,29 @@ Production-style infrastructure deployed on Azure using Terraform, with environm
 - Azure CLI (`az login`)
 - An Azure subscription with permission to create resources
 
+## Architecture (Local Platform)
+        ┌──────────────────────┐
+        │      Client / Browser │
+        └──────────┬───────────┘
+                   │ HTTP :80
+                   ▼
+        ┌──────────────────────┐
+        │       Traefik        │
+        │  (Reverse Proxy/GW)  │
+        └──────────┬───────────┘
+                   │ routes / -> api:8000
+                   ▼
+        ┌──────────────────────┐
+        │         API          │
+        │      FastAPI         │
+        │     /health /docs    │
+        └──────────┬───────────┘
+                   │ DATABASE_URL
+                   ▼
+        ┌──────────────────────┐
+        │       Postgres       │
+        │  persistent-ready    │
+        └──────────────────────┘
 
 
 ## Quick start (dev)
