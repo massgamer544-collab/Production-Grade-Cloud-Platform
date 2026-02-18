@@ -1,16 +1,16 @@
-
-.PHONY: dev host certs up down tf-init tf-apply tf-testroy doctor
+.PHONY: dev check doctor hosts certs up down tf-init tf-apply tf-destroy fmt validate
 
 TF_DIR=infra/envs/local
 CERT_DIR=infra/modules/docker_fastapi_platform/certs
 
+# ------------- High level -------------
 dev: doctor hosts certs up
-	@echo "==> Starting dev environment..."
-	@if command -v bash >/dev/null 2>&1; then \
-		bash scripts/dev.sh; \
-	else \
-		powershell -ExecutionPolicy Bypass -File scripts/dev.ps1; \
-	fi
+	@echo ""
+	@echo "✅ Dev environment ready:"
+	@echo "   https://api.localhost/docs"
+	@echo "   https://api.localhost/health"
+	@echo "   https://traefik.localhost"
+	@echo ""
 
 check:
 	@echo "==> Running checks (terraform + pytest)..."
@@ -20,19 +20,26 @@ check:
 		powershell -ExecutionPolicy Bypass -File scripts/check.ps1; \
 	fi
 
-# ----- Host -------
-hosts:
-	@echo "==> Updating hosts entries..."
-	@if [ "$$(uname -s 2>/dev/null || echo Windows)" = "Windows" ]; then \
-		echo "Windows detected. Run in an elevated terminal (Admin)."; \
-		powershell -ExecutionPolicy Bypass -File scripts/bootstrap-hosts.ps1; \
+doctor:
+	@echo "==> Running doctor..."
+	@if command -v bash >/dev/null 2>&1; then \
+		bash scripts/doctor.sh; \
 	else \
-		bash scripts/bootstrap-hosts.sh; \
+		powershell -ExecutionPolicy Bypass -File scripts/doctor.ps1; \
 	fi
 
-# ---- TLS Certs ----
+# ------------- Hosts -------------
+hosts:
+	@echo "==> Updating hosts entries..."
+	@if command -v bash >/dev/null 2>&1; then \
+		bash scripts/bootstrap-hosts.sh; \
+	else \
+		powershell -ExecutionPolicy Bypass -File scripts/bootstrap-hosts.ps1; \
+	fi
+
+# ------------- TLS Certs -------------
 certs:
-@echo "==> Generating TLS certs (SAN: localhost, api.localhost, traefik.localhost)..."
+	@echo "==> Generating TLS certs (SAN: localhost, api.localhost, traefik.localhost)..."
 	@mkdir -p $(CERT_DIR)
 	@if [ ! -f "$(CERT_DIR)/localhost.key" ] || [ ! -f "$(CERT_DIR)/localhost.crt" ]; then \
 		openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes \
@@ -44,7 +51,7 @@ certs:
 		echo "Certs already exist. (Delete $(CERT_DIR)/localhost.* to regenerate)"; \
 	fi
 
-# ---- Terraform ----
+# ------------- Terraform -------------
 tf-init:
 	cd $(TF_DIR) && terraform init
 
@@ -58,30 +65,9 @@ up: tf-init tf-apply
 
 down: tf-destroy
 
-fmt: 
+fmt:
 	cd infra && terraform fmt -recursive
 
 validate:
-	cd infra/envs/local && terraform init -backend=false
-	cd infra/envs/local && terraform validate
-
-up: 
-	cd infra/envs/local && terraform init
-	cd infra/envs/local && terraform apply -auto-approve
-
-down:
-	cd infra/envs/local && terraform destroy -auto-approve
-
-bootstrap-windows:
-	powershell -ExecutionPolicy Bypass -File scripts/bootstrap-hosts.ps1
-
-bootstrap-linux:
-	bash scripts/bootstrap-linux.sh
-
-doctor:
-	@echo "==> Running doctor..."
-	@if command -v bash >/dev/null 2>&1; then \
-		bash scripts/doctor.sh; \
-	else \
-		powershell -ExecutionPolicy Bypass -File scripts/doctor.ps1; \
-	fi
+	cd $(TF_DIR) && terraform init -backend=false
+	cd $(TF_DIR) && terraform validate
