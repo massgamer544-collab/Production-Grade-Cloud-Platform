@@ -1,124 +1,185 @@
-# Azure Platform Lab (Terraform)
-
-Production-style infrastructure deployed on Azure using Terraform, with environment separation (dev/test) and remote state support.
+# 🚀 Production-Grade Developer Platform  
+### Local-first • Cloud-ready • One-command bootstrap
 
 ![CI](../../actions/workflows/ci.yml/badge.svg)
 
-## Local dev commands
+A fully automated developer platform enabling **one-command environment provisioning** with infrastructure-as-code, TLS routing, automated quality gates, and production-inspired architecture.
 
-- Starts dev env: `make dev`
-- Stop / cleanup: `make down`
-- Run checks: `make check`
+Designed to mirror real-world platform engineering practices.
 
-Windows fallback:
-- Double-Click `scripts/dev.cmd` (recommended: Run as Administrator)
+---
 
-## Dev environment (1 command)
+# ⚡ One Command Bootstrap
 
-Windows (Admin terminal):
+make dev 
+
+# Bootstrap automatically : 
+
+✅ hosts entries
+✅ TLS certificates
+✅ reverse proxy (Traefik)
+✅ FastAPI service
+✅ Postgres database
+✅ Terraform infrastructure
+✅ security middlewares
+✅ CI validation
+
+## 🌐 Access
+
+After bootstrap:
+
+👉 https://api.localhost/docs
+
+👉 https://api.localhost/health
+
+👉 https://traefik.localhost
+
+## 🧠 Architecture
+
+Client
+   ↓
+Traefik (TLS Gateway)
+   ↓
+FastAPI
+   ↓
+Postgres
+
+## 🛠 Tech Stack
+
+Platform :
+-Terraform
+-Docker
+-Traefik (TLS reverse proxy)
+
+Backend:
+-FastAPI
+-PostgreSQL
+
+Quality & Security:
+-pytest
+-tflint
+-checkov
+-terraform validate
+-CI pipeline
+
+## Developer Experience
+# Start environment
 make dev
 
-Linux / Git bash
-make dev
+# Run checks
+make check
 
-Then open:
+# Destroy environment
+make down
 
-https://api.localhost/docs
+## 🖥 Windows Users
 
-https://traefik.localhost
+Run terminal as Administrator (required to modify hosts file).
 
-## 6) Ce que l’utilisateur doit savoir (très important)
-- **Windows** : `make dev` doit être lancé dans un terminal **Admin** (hosts file)
-- Le navigateur affichera peut-être un warning “certificat non approuvé” (self-signed). Normal. (On peut enlever le warning plus tard avec **mkcert**.)
+Fallback:
+
+Double-click:
+
+scripts/dev.cmd
+
+## 🔐 TLS Notes
+
+Self-signed certificates are generated automatically.
+
+Browser warnings are expected.
 
 
-## Design decisions
+## ☁️ Cloud Platform (Azure)
 
-- **Infrastructure as Code:** Everything is defined in Terraform (Docker provider) to mirror production deployment patterns.
-- **Gateway-first routing:** API is not exposed directly; traffic flows through a reverse proxy (Traefik) to reflect real platform boundaries.
-- **Environment-ready:** Repo structure supports adding cloud targets (e.g., Azure) while keeping a fully testable local environment.
-- **Quality gates:** CI enforces `terraform fmt`, `terraform validate`, `tflint`, `checkov` and `pytest` to keep infra + app changes safe.
+This repository also includes a production-style Azure infrastructure built with Terraform.
 
-## What this deploys
-- Resource Group
-- Virtual Network + Subnet
-- Network Security Group (SSH inbound rule)
-- Public IP + NIC
-- Ubuntu Linux VM (22.04)
-- Consistent naming + tagging (`project`, `environment`, `managed_by`)
+Features:
+
+Environment separation (dev / test)
+
+Remote state ready
+
+Network security groups
+
+Virtual network + subnet
+
+Linux VM
+
+Consistent tagging strategy
 
 ## Requirements
-- Terraform >= 1.6
-- Azure CLI (`az login`)
-- An Azure subscription with permission to create resources
 
-## Architecture (Local Platform)
-        ┌──────────────────────┐
-        │      Client / Browser │
-        └──────────┬───────────┘
-                   │ HTTP :80
-                   ▼
-        ┌──────────────────────┐
-        │       Traefik        │
-        │  (Reverse Proxy/GW)  │
-        └──────────┬───────────┘
-                   │ routes / -> api:8000
-                   ▼
-        ┌──────────────────────┐
-        │         API          │
-        │      FastAPI         │
-        │     /health /docs    │
-        └──────────┬───────────┘
-                   │ DATABASE_URL
-                   ▼
-        ┌──────────────────────┐
-        │       Postgres       │
-        │  persistent-ready    │
-        └──────────────────────┘
+Terraform >= 1.6
 
+Azure CLI
 
-## Quick start (dev)
+Active Azure subscription
 
+Quick Start (Azure)
 cd infra
+
 cp terraform.tfvars.example terraform.tfvars
-cp backend-dev.tf.example backend-dev.tf   # optional if using remote state
+cp backend-dev.tf.example backend-dev.tf
+
 terraform init
 terraform plan
 terraform apply
 
-
-## SSH into the VM 
-After Apply , Terraform outputs a public IP
-
+SSH Access
 ssh -i id_ed25519 azureuser@<PUBLIC_IP>
 
-## Destroy (clean teardown)
-
+Destroy Infrastructure
 terraform destroy
 
-## Environments
-This repo supports environment separation via variables ( e.g., environment = "dev" / "test") , allowing 
-isolated resource groups and naming.
+## 🧱 Design Decisions
+Infrastructure as Code
 
-To create a test environment : 
+Everything is defined declaratively to ensure repeatability.
 
-cd infra 
-cd terraform.tfvars.example test.tfvars
+Gateway-first Architecture
 
-terraform plan -var-file=test.tfvars
-terraform apply -var-file=test.tfvars
+Services are never exposed directly — traffic flows through a reverse proxy.
 
-## Remote State (Azure backend)
-Use backend-dev.tf.example as a template , fill the storage account details, then:
+Local-first Strategy
 
-terraform init -migrate-state
+The platform is fully testable without cloud dependencies.
 
-## Notes 
-- Terraform state files and .tfvars are intentionally excluded from Git.
-- This project is designed to reflect production patterns ( indempotent deploy/destroy)
+Cloud-ready
 
-## Local platform (Terraform + Docker)
-```bash
-cd infra/envs/local
-terraform init
-terraform apply
+Architecture supports seamless transition to cloud environments.
+
+Quality Gates
+
+CI enforces formatting, validation, linting, security scanning, and tests.
+
+## 📈 What This Demonstrates
+
+This project highlights capabilities in:
+
+Platform Engineering
+
+DevOps practices
+
+Infrastructure design
+
+Secure defaults
+
+Automation
+
+Developer tooling
+
+## 🚀 Future Enhancements
+
+Observability stack (Grafana + Prometheus)
+
+Redis + async workers
+
+Auth service (Keycloak)
+
+Multi-service routing
+
+Kubernetes migration path
+
+## 👤 Author
+
+Built as part of an advanced platform engineering portfolio.
