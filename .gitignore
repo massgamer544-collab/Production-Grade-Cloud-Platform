@@ -9,3 +9,6 @@
 **/*.pem
 .vscode/
 .idea/
+# TLS certs (local only)
+**/infra/modules/docker_fastapi_platform/certs/*.key
+**/infra/modules/docker_fastapi_platform/certs/*.crt

@@ -74,58 +74,123 @@ resource "docker_container" "api" {
   name  = local.api_name
   image = docker_image.fastapi.image_id
 
-  networks_advanced { name = docker_network.net.name }
-
-  env = ["DATABASE_URL=${local.dsn}"]
-
-  ports {
-    internal = 8000
-    external = var.api_port
+  networks_advanced {
+    name = docker_network.net.name
   }
 
-  depends_on = [docker_container.postgres]
-}
-resource "docker_image" "traefik" {
-  name = "traefik:v3.1"
+  env = [
+    "DATABASE_URL=${local.dsn}",
+  ]
+
+  # IMPORTANT: no direct port exposure; Traefik routes to the internal port 8000
+  # ports {
+  #   internal = 8000
+  #   external = var.api_port
+  # }
+
+  labels = {
+    "traefik.enable" = "true"
+
+    # Router: https://api.localhost/*
+    "traefik.http.routers.api.rule"        = "Host(`api.localhost`) && PathPrefix(`/`)"
+    "traefik.http.routers.api.entrypoints" = "websecure"
+    "traefik.http.routers.api.tls"         = "true"
+
+    # Attach middlewares (security headers + rate limit)
+    "traefik.http.routers.api.middlewares" = "sec-headers@docker,rate-limit@docker"
+
+    # Service: internal port of FastAPI container
+    "traefik.http.services.api.loadbalancer.server.port" = "8000"
+
+    # ---- Middlewares definitions ----
+
+    # Security headers baseline
+    "traefik.http.middlewares.sec-headers.headers.stsSeconds"            = "31536000"
+    "traefik.http.middlewares.sec-headers.headers.stsIncludeSubdomains"  = "true"
+    "traefik.http.middlewares.sec-headers.headers.stsPreload"            = "true"
+    "traefik.http.middlewares.sec-headers.headers.frameDeny"             = "true"
+    "traefik.http.middlewares.sec-headers.headers.contentTypeNosniff"    = "true"
+    "traefik.http.middlewares.sec-headers.headers.browserXssFilter"      = "true"
+    "traefik.http.middlewares.sec-headers.headers.referrerPolicy"        = "no-referrer"
+
+    # Basic rate limiting
+    "traefik.http.middlewares.rate-limit.ratelimit.average" = "50"
+    "traefik.http.middlewares.rate-limit.ratelimit.burst"   = "100"
+  }
+
+  depends_on = [
+    docker_container.postgres,
+    docker_container.traefik
+  ]
 }
 
 resource "docker_container" "traefik" {
-  name  = "${var.name}-traefik"
+ name  = "${var.name}-traefik"
   image = docker_image.traefik.image_id
 
   networks_advanced {
     name = docker_network.net.name
   }
 
-  # Ports exposés: HTTP (80) + dashboard (8080 optionnel)
-#  ports {
-#    internal = 80
-#    external = 80
-#  }
-
-labels = {
-    "traefik.enable" = "true"
-
-    # Router HTTP: host localhost, path prefix /
-    "traefik.http.routers.api.rule" = "Host(`localhost`) && PathPrefix(`/`)"
-    "traefik.http.routers.api.entrypoints" = "web"
-
-    # Service: port interne du container api
-    "traefik.http.services.api.loadbalancer.server.port" = "8000"
+  # HTTP :80 (redirige vers HTTPS)
+  ports {
+    internal = 80
+    external = 80
   }
 
-  # Traefik config en CLI flags (simple et portable)
+  # HTTPS :443
+  ports {
+    internal = 443
+    external = 443
+  }
+
   command = [
+    # Dashboard enabled but NOT insecure
     "--api.dashboard=true",
-    "--api.insecure=true",
+    "--api.insecure=false",
+
+    # Providers
     "--providers.docker=true",
     "--providers.docker.exposedbydefault=false",
-    "--entrypoints.web.address=:80"
+
+    # Dynamic config file (TLS certs)
+    "--providers.file.directory=/etc/traefik/dynamic",
+    "--providers.file.watch=true",
+
+    # EntryPoints
+    "--entrypoints.web.address=:80",
+    "--entrypoints.websecure.address=:443",
+
+    # Redirect HTTP -> HTTPS
+    "--entrypoints.web.http.redirections.entrypoint.to=websecure",
+    "--entrypoints.web.http.redirections.entrypoint.scheme=https",
   ]
 
-  # Permet à Traefik de lire les labels Docker
+  # Allow Traefik to read Docker labels
   volumes {
     host_path      = "/var/run/docker.sock"
     container_path = "/var/run/docker.sock"
+  }
+
+  # TLS certs (self-signed) mounted into Traefik
+  volumes {
+    host_path      = "${path.module}/certs"
+    container_path = "/etc/traefik/certs"
+  }
+
+  # Dynamic config (contains TLS cert mapping)
+  volumes {
+    host_path      = "${path.module}/traefik"
+    container_path = "/etc/traefik/dynamic"
+  }
+
+  # Expose Traefik dashboard at https://traefik.localhost
+  labels = {
+    "traefik.enable" = "true"
+
+    "traefik.http.routers.traefik.rule"        = "Host(`traefik.localhost`)"
+    "traefik.http.routers.traefik.entrypoints" = "websecure"
+    "traefik.http.routers.traefik.tls"         = "true"
+    "traefik.http.routers.traefik.service"     = "api@internal"
   }
 }

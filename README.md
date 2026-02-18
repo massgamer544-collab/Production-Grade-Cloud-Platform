@@ -4,6 +4,25 @@ Production-style infrastructure deployed on Azure using Terraform, with environm
 
 ![CI](../../actions/workflows/ci.yml/badge.svg)
 
+## Dev environment (1 command)
+
+Windows (Admin terminal):
+make dev
+
+Linux / Git bash
+make dev
+
+Then open:
+
+https://api.localhost/docs
+
+https://traefik.localhost
+
+## 6) Ce que l’utilisateur doit savoir (très important)
+- **Windows** : `make dev` doit être lancé dans un terminal **Admin** (hosts file)
+- Le navigateur affichera peut-être un warning “certificat non approuvé” (self-signed). Normal. (On peut enlever le warning plus tard avec **mkcert**.)
+
+
 ## Design decisions
 
 - **Infrastructure as Code:** Everything is defined in Terraform (Docker provider) to mirror production deployment patterns.
