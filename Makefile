@@ -11,6 +11,14 @@ dev:
 	else \
 		powershell -ExecutionPolicy Bypass -File scripts/dev.ps1; \
 	fi
+	
+check:
+	@echo "==> Running checks (terraform + pytest)..."
+	@if command -v bash >/dev/null 2>&1; then \
+		bash scripts/check.sh; \
+	else \
+		powershell -ExecutionPolicy Bypass -File scripts/check.ps1; \
+	fi
 
 # ----- Host -------
 hosts:

@@ -4,6 +4,15 @@ Production-style infrastructure deployed on Azure using Terraform, with environm
 
 ![CI](../../actions/workflows/ci.yml/badge.svg)
 
+## Local dev commands
+
+- Starts dev env: `make dev`
+- Stop / cleanup: `make down`
+- Run checks: `make check`
+
+Windows fallback:
+- Double-Click `scripts/dev.cmd` (recommended: Run as Administrator)
+
 ## Dev environment (1 command)
 
 Windows (Admin terminal):
