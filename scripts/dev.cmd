@@ -1,12 +1,23 @@
 @echo off
 setlocal
 
-REM Runs the Powershell dev bootstrap (hosts + TLS + terraform apply)
-REM Note : Editing hosts requires Administrator.
-echo === Production-Grade Dev Environment ===
-echo If this fails on hosts file: re-run this CMD as Administrator.
+:: Verify requirements
+powershell -ExecutionPolicy Bypass -File "%~dp0doctor.ps1"
+if errorlevel 1 exit /b 1
+
+:: Check for admin rights 
+NET SESSION >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    echo Requesting Administrator privileges...
+    powershell -Command "Start-Process cmd -ArgumentList '/c %~s0' - Verb RunAs"
+    exit /b
+)
+
+echo Running with Administrator privileges...
+echo.
 
 powershell -ExecutionPolicy Bypass -File "%~dp0dev.ps1"
+
 if errorlevel 1 (
     echo.
     echo ERROR: dev bootstrap failed.

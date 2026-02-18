@@ -1,17 +1,17 @@
 
-.PHONY: dev host certs up down tf-init tf-apply tf-testroy
+.PHONY: dev host certs up down tf-init tf-apply tf-testroy doctor
 
 TF_DIR=infra/envs/local
 CERT_DIR=infra/modules/docker_fastapi_platform/certs
 
-dev:
+dev: doctor hosts certs up
 	@echo "==> Starting dev environment..."
 	@if command -v bash >/dev/null 2>&1; then \
 		bash scripts/dev.sh; \
 	else \
 		powershell -ExecutionPolicy Bypass -File scripts/dev.ps1; \
 	fi
-	
+
 check:
 	@echo "==> Running checks (terraform + pytest)..."
 	@if command -v bash >/dev/null 2>&1; then \
@@ -77,3 +77,11 @@ bootstrap-windows:
 
 bootstrap-linux:
 	bash scripts/bootstrap-linux.sh
+
+doctor:
+	@echo "==> Running doctor..."
+	@if command -v bash >/dev/null 2>&1; then \
+		bash scripts/doctor.sh; \
+	else \
+		powershell -ExecutionPolicy Bypass -File scripts/doctor.ps1; \
+	fi
